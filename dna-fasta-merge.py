@@ -43,22 +43,30 @@ header, mtdna = read_fasta(fasta)
 def read_snpfile(x):
     data = open(x)
     vals = list()
-    map(vals.append, [l.strip('\r\n').split('\t') for l in data if l[0] != '#'])
-    return dict([(int(l[2]), l[3]) for l in vals if l[1] == 'MT' and l[3] in "ACGT"])
+    map(vals.append,
+        [l.strip('\r\n').split('\t') for l in data if l[0] != '#'])
+    return dict([(int(l[2]), l[3])
+                 for l in vals if l[1] == 'MT' and l[3] in "ACGT"])
 
 snps = read_snpfile(snpfile)
 
 # Loop over 23andMe SNPs and steal any in the coding region (575-16000)
 
-for k, v in [(k, snps[k]) for k in sorted(snps.iterkeys()) if k >= 575 and k <= 16000]:
+for k, v in \
+    [(k, snps[k]) for k in sorted(snps.iterkeys()) if k >= 575 and k <= 16000]:
     # 23andMe Yoruba to Cambridge conversion
     # http://www.snpedia.com/index.php/MtDNA_Position_Conversions
-    if k <= 309: k = k - 1
-    elif k >= 3109 and k <= 16183: k = k - 1 - 1
-    elif (k >= 312 and k <= 3108) or (k >= 16185 and k <= 16571): k = k - 2 - 1
+    if k <= 309: k = k
+    elif k >= 3109 and k <= 16183: k = k - 1
+    elif (k >= 312 and k <= 3108) or (k >= 16185 and k <= 16571): k = k - 2
     else: continue
-    #if mtdna[k] != v: print k, mtdna[k-1:k+2], '=>', v
-    mtdna[k] = v
+    # 23andMe bad calls reported by the v3 chip
+    # http://vps1.jameslick.com/dna/mthap/
+    if (k, v) in [(208,'A'), (300,'C'), (310,'C'), (469,'G'), (961,'G'),
+                  (5820,'G'), (5877,'G'), (10388,'T'), (14290,'A'), (14422,'A'),
+                  (15072,'T'), (16179,'T'), (16180,'C'), (16392,'A')]: continue
+    #if mtdna[k-1] != v: print k, mtdna[k-2:k+1], '=>', v
+    mtdna[k-1] = v
 
 def print_fasta():
     print header
